@@ -20,7 +20,7 @@ impl Hailstone {
         let p2 = Vector2::new(other.px as f64, other.py as f64);
         let v1 = Vector2::new(self.vx as f64, self.vy as f64);
         let v2 = Vector2::new(other.vx as f64, other.vy as f64);
-        let dp = p1 - p2;
+        let dp = p2 - p1;
         let dv = v1 - v2;
         if dv == Vector2::zeros() {
             return false;
@@ -30,7 +30,9 @@ impl Hailstone {
             return false;
         }
         let p1_at_intersection = self.get_position(time_at_intersection);
-        p1_at_intersection.x >= lower && p1_at_intersection.x <= upper && p1_at_intersection.y >= lower && p1_at_intersection.y <= upper
+        let within_bound = p1_at_intersection.x >= lower && p1_at_intersection.x <= upper && p1_at_intersection.y >= lower && p1_at_intersection.y <= upper;
+        println!("p1x: {}, p1y: {}, p2x: {}, p2y: {}, p1_at_intersection: {:?}, {}", self.px, self.py, other.px, other.py, p1_at_intersection, within_bound);
+        within_bound
     }
 
     fn get_position(&self, time: f64) -> Vector2<f64> {
@@ -76,6 +78,6 @@ fn solution(file: &str, lower: f64, upper: f64) -> usize {
 }
 
 fn main() {
-    assert_eq!(solution("example.txt", 17.0, 27.0), 2);
+    assert_eq!(solution("example.txt", 7.0, 27.0), 2);
     assert_eq!(solution("input.txt", 200000000000000.0, 400000000000000.0), 3058);
 }
