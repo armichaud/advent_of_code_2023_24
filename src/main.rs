@@ -1,6 +1,6 @@
 use std::{fs::File, io::{BufReader, BufRead}};
-
-use nalgebra::Vector2;
+use itertools::Itertools;
+use nalgebra::{Vector2, Matrix2};
 
 #[derive(Debug)]
 struct Hailstone {
@@ -16,23 +16,23 @@ struct Hailstone {
 
 impl Hailstone {
     fn collides(&self, other: &Hailstone, lower: f64, upper: f64) -> bool {
-        if (self.vx - other.vx) == 0.0 || (self.vy - other.vy) == 0.0 {
-            return false;
+        let velocities = Matrix2::from_row_slice(&[self.vx, -other.vx, self.vy, -other.vy]);
+        let positions = Vector2::new(other.px - self.px, other.py - self.py);
+        if let Some(inverse) = velocities.try_inverse() {
+            let intersection_times = inverse * positions;
+            if intersection_times.x < 0.0 || intersection_times.y < 0.0 {
+                return false;
+            }
+            let p = self.get_position(intersection_times.x);
+            p.x >= lower && p.x <= upper && p.y >= lower && p.y <= upper
+        } else {
+            false
         }
-        let tx = (other.px - self.px) / (self.vx - other.vx);
-        let ty = (other.py - self.py) / (self.vy - other.vy);
-        let px = self.get_position(tx);
-        let py = other.get_position(ty);
-        let in_the_future = tx >= 0.0 && ty >= 0.0;
-        let within_test_area = px.x >= lower && px.x <= upper && px.y >= lower && px.y <= upper && py.x >= lower && py.x <= upper && py.y >= lower && py.y <= upper;
-        in_the_future && within_test_area
     }
     
 
     fn get_position(&self, time: f64) -> Vector2<f64> {
-        let x = self.px + (self.vx * time);
-        let y = self.py + (self.vy * time);
-        Vector2::new(x, y)
+        Vector2::new(self.px + (self.vx * time), self.py + (self.vy * time))
     }
 }
 
@@ -59,19 +59,12 @@ fn get_hailstones(file: &str) -> Vec<Hailstone> {
 
 fn solution(file: &str, lower: f64, upper: f64) -> usize {
     let hailstones = get_hailstones(file);
-    let nhailstones = hailstones.len();
-    let mut collisions = 0;
-    for i in 0..nhailstones {
-        for j in i+1..nhailstones {
-            if hailstones[i].collides(&hailstones[j], lower, upper) {
-                collisions += 1;
-            }
-        }
-    }
-    collisions
+    hailstones.iter().combinations(2).filter(|hailstones| {
+        hailstones[0].collides(&hailstones[1], lower, upper) 
+    }).count()
 }
 
 fn main() {
     assert_eq!(solution("example.txt", 7.0, 27.0), 2);
-    assert_eq!(solution("input.txt", 200000000000000.0, 400000000000000.0), 9622);
+    assert_eq!(solution("input.txt", 200000000000000.0, 400000000000000.0), 11246);
 }
