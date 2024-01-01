@@ -1,50 +1,37 @@
-use core::time;
 use std::{fs::File, io::{BufReader, BufRead}};
 
 use nalgebra::Vector2;
 
 #[derive(Debug)]
 struct Hailstone {
-    px: usize,
-    py: usize,
+    px: f64,
+    py: f64,
     #[allow(dead_code)]
-    pz: usize,
-    vx: isize,
-    vy: isize,
+    pz: f64,
+    vx: f64,
+    vy: f64,
     #[allow(dead_code)]
-    vz: isize,
+    vz: f64,
 }
 
 impl Hailstone {
     fn collides(&self, other: &Hailstone, lower: f64, upper: f64) -> bool {
-        let p1 = Vector2::new(self.px as f64, self.py as f64);
-        let p2 = Vector2::new(other.px as f64, other.py as f64);
-        let v1 = Vector2::new(self.vx as f64, self.vy as f64);
-        let v2 = Vector2::new(other.vx as f64, other.vy as f64);
-        // println!("p1: {}, p2: {}, v1: {}, v2: {}", p1, p2, v1, v2);
-        let dp = p2 - p1;
-        let dv = v1 - v2;
-        // println!("dp: {}, dv: {}", dp, dv);
-        if dv == Vector2::zeros() {
+        if (self.vx - other.vx) == 0.0 || (self.vy - other.vy) == 0.0 {
             return false;
         }
-        let time_at_intersection = dp.component_div(&dv);
-        let tx = time_at_intersection.x;
-        let ty = time_at_intersection.y;
-        // println!("T: {}", time_at_intersection);
-        if tx < 0.0 || ty < 0.0 {
-            return false;
-        }
-        let p1_at_intersection = self.get_position(tx);
-        // let p2_at_intersection = other.get_position(ty);
-        // println!("p1: {}, p2: {}", p1_at_intersection, p2_at_intersection);
-        let within_bound = p1_at_intersection.x >= lower && p1_at_intersection.x <= upper && p1_at_intersection.y >= lower && p1_at_intersection.y <= upper;
-        within_bound
+        let tx = (other.px - self.px) / (self.vx - other.vx);
+        let ty = (other.py - self.py) / (self.vy - other.vy);
+        let px = self.get_position(tx);
+        let py = other.get_position(ty);
+        let in_the_future = tx >= 0.0 && ty >= 0.0;
+        let within_test_area = px.x >= lower && px.x <= upper && px.y >= lower && px.y <= upper && py.x >= lower && py.x <= upper && py.y >= lower && py.y <= upper;
+        in_the_future && within_test_area
     }
+    
 
     fn get_position(&self, time: f64) -> Vector2<f64> {
-        let x = self.px as f64 + (self.vx as f64 * time);
-        let y = self.py as f64 + (self.vy as f64 * time);
+        let x = self.px + (self.vx * time);
+        let y = self.py + (self.vy * time);
         Vector2::new(x, y)
     }
 }
@@ -56,8 +43,8 @@ fn get_hailstones(file: &str) -> Vec<Hailstone> {
     for line in lines {
         let line = line.unwrap();
         let mut split = line.split("@");
-        let position = split.next().unwrap().split(", ").map(|x| x.trim().parse::<usize>().unwrap()).collect::<Vec<usize>>();
-        let velocity = split.next().unwrap().split(", ").map(|x| x.trim().parse::<isize>().unwrap()).collect::<Vec<isize>>();
+        let position = split.next().unwrap().split(", ").map(|x| x.trim().parse::<f64>().unwrap()).collect::<Vec<f64>>();
+        let velocity = split.next().unwrap().split(", ").map(|x| x.trim().parse::<f64>().unwrap()).collect::<Vec<f64>>();
         hailstones.push(Hailstone {
             px: position[0],
             py: position[1],
@@ -86,5 +73,5 @@ fn solution(file: &str, lower: f64, upper: f64) -> usize {
 
 fn main() {
     assert_eq!(solution("example.txt", 7.0, 27.0), 2);
-    // assert_eq!(solution("input.txt", 200000000000000.0, 400000000000000.0), 12045);
+    assert_eq!(solution("input.txt", 200000000000000.0, 400000000000000.0), 9622);
 }
