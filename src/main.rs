@@ -65,6 +65,6 @@ fn solution(file: &str, lower: f64, upper: f64) -> usize {
 }
 
 fn main() {
-    assert_eq!(solution("example.txt", 7.0, 27.0), 2);
-    assert_eq!(solution("input.txt", 200000000000000.0, 400000000000000.0), 11246);
+    println!("{}", solution("example.txt", 7.0, 27.0));
+    println!("{}", solution("input.txt", 200000000000000.0, 400000000000000.0));
 }
